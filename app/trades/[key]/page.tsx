@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getCtx } from '@/lib/view';
 import { money, price, qty, duration, dateLabel, marketTime, pnlClass } from '@/lib/format';
-import { TopBar, Kpi, Money } from '@/components/ui';
+import { TopBar, Kpi, Money, Avatar } from '@/components/ui';
 import { TradeChart } from '@/components/TradeChart';
 import { TradeNoteForm } from '@/components/forms';
 
@@ -38,7 +38,7 @@ export default async function TradePage({ params }: { params: Promise<{ key: str
   return (
     <>
       <TopBar title={t.symbol} ctx={ctx} />
-      <main className="main stack">
+      <main className="main">
         <div className="row between">
           <Link href="/trades" className="small muted">‹ Trades</Link>
           <div className="row">
@@ -47,10 +47,11 @@ export default async function TradePage({ params }: { params: Promise<{ key: str
           </div>
         </div>
 
-        <div className="card">
-          <div className="row between wrap">
+        <div className={`hero ${p >= 0 ? 'up' : 'down'}`} style={{ paddingBottom: 20 }}>
+          <div className="row between wrap" style={{ position: 'relative' }}>
             <div>
-              <div className="row" style={{ gap: 8 }}>
+              <div className="row" style={{ gap: 10 }}>
+                <Avatar symbol={t.symbol} size={46} />
                 <h1>{t.symbol}</h1>
                 <span className={`badge ${t.direction === 'LONG' ? 'long' : 'short'}`}>{t.direction}</span>
                 {t.status === 'OPEN' && <span className="badge accent">OPEN</span>}
@@ -61,7 +62,7 @@ export default async function TradePage({ params }: { params: Promise<{ key: str
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div className={`num ${pnlClass(p)}`} style={{ fontSize: 28, fontWeight: 700 }}>{money(p, ctx.ccy, { sign: true })}</div>
+              <div className={`num ${pnlClass(p)}`} style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.04em' }}>{money(p, ctx.ccy, { sign: true })}</div>
               <div className="small muted">{t.status === 'OPEN' ? 'realized so far' : 'net, after fees'}{r != null ? ` · ${r >= 0 ? '+' : ''}${r.toFixed(2)}R` : ''}</div>
             </div>
           </div>
@@ -72,19 +73,19 @@ export default async function TradePage({ params }: { params: Promise<{ key: str
           )}
         </div>
 
-        <div className="kpis">
-          <Kpi label="Avg entry" value={price(t.entryPrice)} />
-          <Kpi label="Avg exit" value={price(t.exitPrice)} />
-          <Kpi label="Max size" value={qty(t.maxPosition)} sub={`${money(t.maxPosition * t.entryPrice * t.multiplier, t.currency, { compact: true })} notional`} />
-          <Kpi label="Hold time" value={duration(t.holdSeconds)} />
-          <Kpi label="Gross / fees" value={money(conv(t.gross), ctx.ccy, { sign: true })} tone={t.gross} sub={`fees ${money(-ctx.comm(t), ctx.ccy)}`} />
-          <Kpi label="R-multiple" value={r != null ? `${r.toFixed(2)}R` : '—'} tone={r ?? undefined}
+        <div className="kpis six">
+          <Kpi icon="edge" label="Avg entry" value={price(t.entryPrice)} />
+          <Kpi icon="swap" label="Avg exit" value={price(t.exitPrice)} />
+          <Kpi icon="count" label="Max size" value={qty(t.maxPosition)} sub={`${money(t.maxPosition * t.entryPrice * t.multiplier, t.currency, { compact: true })} notional`} />
+          <Kpi icon="cal" label="Hold time" value={duration(t.holdSeconds)} />
+          <Kpi icon="fee" label="Gross / fees" value={money(conv(t.gross), ctx.ccy, { sign: true })} tone={t.gross} sub={`fees ${money(-ctx.comm(t), ctx.ccy)}`} />
+          <Kpi icon="target" label="R-multiple" value={r != null ? `${r.toFixed(2)}R` : '—'} tone={r ?? undefined}
             sub={risk ? `risk ${money(conv(risk), ctx.ccy)}${planned ? ` · planned ${planned.toFixed(1)}R` : ''}` : 'set a stop below'} />
         </div>
 
         <div className="two">
           <section className="card">
-            <div className="card-head"><h2>Chart</h2></div>
+            <div className="card-head"><h3>Chart</h3></div>
             {chartable ? (
               <TradeChart symbol={t.underlying && t.assetClass !== 'STK' ? t.underlying : t.symbol} from={t.openTime} to={t.closeTime ?? new Date().toISOString()}
                 legs={t.legs.map((l) => ({ time: l.time, quantity: l.quantity, price: l.price, role: l.role }))}
@@ -93,14 +94,14 @@ export default async function TradePage({ params }: { params: Promise<{ key: str
           </section>
 
           <section className="card">
-            <div className="card-head"><h2>Journal this trade</h2></div>
+            <div className="card-head"><h3>Journal this trade</h3></div>
             <TradeNoteForm tradeKey={t.key} note={note} setups={ctx.setups} knownTags={knownTags} knownMistakes={knownMistakes} />
           </section>
         </div>
 
         {!!note?.screenshots.length && (
           <section className="card">
-            <div className="card-head"><h2>Screenshots</h2></div>
+            <div className="card-head"><h3>Screenshots</h3></div>
             <div className="grid" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))' }}>
               {note.screenshots.map((u) => (
                 <a key={u} href={u} target="_blank" rel="noreferrer noopener">
@@ -113,7 +114,7 @@ export default async function TradePage({ params }: { params: Promise<{ key: str
         )}
 
         <section className="card">
-          <div className="card-head"><h2>Executions</h2><span className="small muted">{t.legs.length} fills · times ET</span></div>
+          <div className="card-head"><h3>Executions</h3><span className="small muted">{t.legs.length} fills · times ET</span></div>
           <div className="scroll-x">
             <table className="t legs num">
               <thead><tr><th>Time</th><th>Side</th><th className="r">Qty</th><th className="r">Price</th><th className="r">Position</th><th className="r">Fee</th><th className="r">Realized</th></tr></thead>

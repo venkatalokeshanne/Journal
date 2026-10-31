@@ -186,6 +186,10 @@ export interface Stats {
   maxWinStreak: number;
   maxLossStreak: number;
   currentStreak: number; // + wins / - losses
+  /** Van Tharp's System Quality Number: sqrt(min(n,100)) * mean / stdev of trade P&L. */
+  sqn: number | null;
+  longs: number;
+  shorts: number;
 }
 
 const BE = 0.005;
@@ -213,6 +217,9 @@ export function computeStats(closed: Trip[], pnl: PnlFn, commission: PnlFn): Sta
     maxL = Math.min(maxL, streak);
   }
   const n = chron.length;
+  const pnls = chron.map(pnl);
+  const mean = n ? pnls.reduce((a, b) => a + b, 0) / n : 0;
+  const sd = n > 1 ? Math.sqrt(pnls.reduce((a, b) => a + (b - mean) ** 2, 0) / (n - 1)) : 0;
   const avgWin = wins ? gp / wins : 0;
   const avgLoss = losses ? gl / losses : 0;
   return {
@@ -237,6 +244,9 @@ export function computeStats(closed: Trip[], pnl: PnlFn, commission: PnlFn): Sta
     maxWinStreak: maxW,
     maxLossStreak: -maxL,
     currentStreak: streak,
+    sqn: sd > 0 ? (Math.sqrt(Math.min(n, 100)) * mean) / sd : null,
+    longs: chron.filter((t) => t.direction === 'LONG').length,
+    shorts: chron.filter((t) => t.direction === 'SHORT').length,
   };
 }
 

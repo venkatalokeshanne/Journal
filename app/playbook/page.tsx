@@ -16,7 +16,7 @@ export default async function Playbook() {
   return (
     <>
       <TopBar title="Playbook" ctx={ctx} />
-      <main className="main stack">
+      <main className="main">
         <div className="page-head">
           <div><h1>Playbook</h1><p className="small muted" style={{ margin: '4px 0 0' }}>Your setups and how each one really performs. {tagged} of {closed.length} trades have a setup.</p></div>
         </div>

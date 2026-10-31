@@ -25,7 +25,7 @@ export default async function JournalDayPage({ params }: { params: Promise<{ day
   return (
     <>
       <TopBar title="Journal" ctx={ctx} />
-      <main className="main stack">
+      <main className="main">
         <div className="row between">
           <Link className="btn sm" href={`/journal/${addDays(day, -1)}`} aria-label="Previous day">‹</Link>
           <div style={{ textAlign: 'center' }}>
@@ -44,11 +44,11 @@ export default async function JournalDayPage({ params }: { params: Promise<{ day
 
         <div className="two">
           <section className="card">
-            <div className="card-head"><h2>Notes for the day</h2></div>
+            <div className="card-head"><h3>Notes for the day</h3></div>
             <JournalForm key={day} j={j} />
           </section>
           <section className="card">
-            <div className="card-head"><h2>Trades</h2><Link className="small muted" href={`/trades?day=${day}&status=all`}>Open list ›</Link></div>
+            <div className="card-head"><h3>Trades</h3><Link className="small muted" href={`/trades?day=${day}&status=all`}>Open list ›</Link></div>
             <div className="list">
               {trips.map((t) => <TradeRow key={t.key} t={t} ctx={ctx} note={ctx.notes.get(t.key)} />)}
               {!trips.length && <p className="muted small">No trades closed this day.</p>}

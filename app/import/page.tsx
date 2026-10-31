@@ -18,7 +18,7 @@ export default async function ImportPage() {
   return (
     <>
       <TopBar title="Sync & Import" />
-      <main className="main stack">
+      <main className="main">
         <h1>Sync &amp; Import</h1>
 
         <div className="kpis">
@@ -30,20 +30,20 @@ export default async function ImportPage() {
 
         <div className="two even">
           <section className="card">
-            <div className="card-head"><h2>Interactive Brokers</h2>
+            <div className="card-head"><h3>Interactive Brokers</h3>
               <span className={`badge ${configured ? 'long' : 'warn'}`}>{configured ? `Query ${process.env.IBKR_FLEX_QUERY_ID}` : 'not configured'}</span></div>
             {!configured && <p className="small muted">Add <code>IBKR_FLEX_TOKEN</code> and <code>IBKR_FLEX_QUERY_ID</code> to <code>.env.local</code> and restart. See README.</p>}
             <SyncButtons configured={configured} firstDate={info.first ?? '2024-01-01'} />
           </section>
           <section className="card">
-            <div className="card-head"><h2>Upload Flex reports</h2></div>
+            <div className="card-head"><h3>Upload Flex reports</h3></div>
             <p className="small muted" style={{ marginTop: 0 }}>IBKR Activity Flex Query output (CSV or XML) with the Trades section at Execution level. Re-importing the same file is safe: duplicates are skipped.</p>
             <UploadBox />
           </section>
         </div>
 
         <section className="card">
-          <div className="card-head"><h2>History</h2></div>
+          <div className="card-head"><h3>History</h3></div>
           <div className="list">
             {logs.map((l) => (
               <div key={l.id} className="trow" style={{ gridTemplateColumns: '1fr' }}>

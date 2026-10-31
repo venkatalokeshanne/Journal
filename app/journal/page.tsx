@@ -5,7 +5,7 @@ import { loadJournal } from '@/lib/data';
 import { todayInTz } from '@/lib/time';
 import { dateLabel, WEEKDAY_NAMES } from '@/lib/format';
 import { weekdayOf } from '@/lib/time';
-import { TopBar, Money } from '@/components/ui';
+import { TopBar, PnlPill, PageHead } from '@/components/ui';
 
 export const dynamic = 'force-dynamic';
 const PAGE = 30;
@@ -25,24 +25,27 @@ export default async function JournalList({ searchParams }: { searchParams: Prom
   return (
     <>
       <TopBar title="Journal" ctx={ctx} />
-      <main className="main stack">
-        <div className="page-head">
-          <div><h1>Journal</h1><p className="small muted" style={{ margin: '4px 0 0' }}>{journaled} of {days.length} trading days reviewed</p></div>
-          <Link className="btn primary" href={`/journal/${today}`}>Today’s entry</Link>
-        </div>
-        <section className="card" style={{ padding: '4px 12px' }}>
+      <main className="main">
+        <PageHead title="Journal" sub={`${journaled} of ${days.length} trading days reviewed`}>
+          <Link className="btn primary" href={`/journal/${today}`}>＋ Today’s entry</Link>
+        </PageHead>
+        <section className="card" style={{ padding: '6px 8px' }}>
           <div className="list">
             {shown.map((d) => {
               const v = byDate.get(d), j = journal.get(d);
               const snippet = j?.review || j?.plan || j?.lessons;
               return (
                 <Link key={d} href={`/journal/${d}`} className="trow">
-                  <div className="sym">{WEEKDAY_NAMES[weekdayOf(d)]}, {dateLabel(d)}
-                    {j?.mood ? <span>{['😣', '🙁', '😐', '🙂', '😄'][j.mood - 1]}</span> : null}
-                    {!snippet && v && <span className="badge warn">not reviewed</span>}
+                  <span className="datebox"><small>{WEEKDAY_NAMES[weekdayOf(d)]}</small>{+d.slice(8)}</span>
+                  <div className="info">
+                    <div className="sym">{dateLabel(d)}
+                      {j?.mood ? <span>{['😣', '🙁', '😐', '🙂', '😄'][j.mood - 1]}</span> : null}
+                      {!snippet && v && <span className="badge warn">TO REVIEW</span>}
+                      {snippet && <span className="badge long">REVIEWED</span>}
+                    </div>
+                    <div className="meta">{snippet ? snippet.slice(0, 90) : v ? `${v.trades} trade${v.trades === 1 ? '' : 's'}` : 'No trades'}</div>
                   </div>
-                  <div className="meta">{snippet ? snippet.slice(0, 90) : v ? `${v.trades} trade${v.trades === 1 ? '' : 's'}` : 'No trades'}</div>
-                  <div className="pnl">{v ? <Money v={v.pnl} ccy={ctx.ccy} /> : <span className="faint">—</span>}</div>
+                  <div className="pnl">{v ? <PnlPill v={v.pnl} ccy={ctx.ccy} /> : <span className="faint">—</span>}</div>
                 </Link>
               );
             })}

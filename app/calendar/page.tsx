@@ -3,9 +3,12 @@ import { getCtx, one, type SP } from '@/lib/view';
 import { dailyPnl } from '@/lib/engine';
 import { money, monthLabel, pnlClass, pct } from '@/lib/format';
 import { todayInTz, addDays, weekdayOf } from '@/lib/time';
-import { TopBar, NoData, Money } from '@/components/ui';
+import { TopBar, NoData, Money, Kpi } from '@/components/ui';
 
 export const dynamic = 'force-dynamic';
+
+const shortNum = (v: number) =>
+  (v > 0 ? '+' : v < 0 ? '−' : '') + new Intl.NumberFormat('en-US', { notation: 'compact', maximumFractionDigits: Math.abs(v) < 1000 ? 0 : 1 }).format(Math.abs(v));
 
 const shiftMonth = (ym: string, n: number) => {
   const [y, m] = ym.split('-').map(Number);
@@ -25,6 +28,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   const lastWithData = days.length ? days[days.length - 1].date.slice(0, 7) : today.slice(0, 7);
   const ym = /^\d{4}-\d{2}$/.test(one(sp.m)) ? one(sp.m) : lastWithData;
 
+  const maxAbs = Math.max(1, ...days.filter((d) => d.date.startsWith(ym)).map((d) => Math.abs(d.pnl)));
   const first = `${ym}-01`;
   const lead = (weekdayOf(first) + 6) % 7; // Monday-first
   const nDays = new Date(Date.UTC(+ym.slice(0, 4), +ym.slice(5, 7), 0)).getUTCDate();
@@ -52,9 +56,9 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   return (
     <>
       <TopBar title="Calendar" ctx={ctx} />
-      <main className="main stack">
+      <main className="main">
         <div className="page-head">
-          <h1>{monthLabel(ym)}</h1>
+          <div><h1>{monthLabel(ym)}</h1><p className="small muted">Tap a day to open its journal</p></div>
           <div className="row">
             <Link className="btn sm" href={`/calendar?m=${shiftMonth(ym, -1)}`} aria-label="Previous month">‹</Link>
             <Link className="btn sm" href={`/calendar?m=${today.slice(0, 7)}`}>Today</Link>
@@ -63,11 +67,13 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
         </div>
 
         <div className="kpis">
-          <div className="kpi hero"><div className="label">Month P&L</div><div className={`value num ${pnlClass(mPnl)}`}>{money(mPnl, ctx.ccy, { sign: true })}</div>
-            <div className="sub">{mTrades} trades · {mTrades ? pct(mWins / mTrades, 0) : '—'} win rate · {green} green / {red} red days</div></div>
+          <Kpi icon="pnl" label="Month P&L" value={money(mPnl, ctx.ccy, { sign: true })} tone={mPnl} />
+          <Kpi icon="count" label="Trades" value={mTrades} sub={mTrades ? `${pct(mWins / mTrades, 0)} win rate` : '—'} />
+          <Kpi icon="cal" label="Green days" value={<span className="pos">{green}</span>} sub={`of ${green + red} trading days`} />
+          <Kpi icon="down" label="Red days" value={<span className="neg">{red}</span>} sub={monthDays.length ? `avg ${money(mPnl / Math.max(1, green + red), ctx.ccy, { compact: true })}/day` : '—'} />
         </div>
 
-        <section className="card" style={{ padding: 10 }}>
+        <section className="card" style={{ padding: 12 }}>
           <div className="cal">
             {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d) => <div key={d} className="dow">{d}</div>)}
             {cells.map((d, i) => {
@@ -79,14 +85,18 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                   <span className="d">{+d.slice(8)}</span>
                   {v && (Math.abs(v.pnl) > 0.004 || v.trades) ? (
                     <span>
-                      <span className={`v num ${pnlClass(v.pnl)}`} style={{ display: 'block' }}>{money(v.pnl, ctx.ccy, { compact: true, sign: true })}</span>
+                      <span className={`v num ${pnlClass(v.pnl)}`} style={{ display: 'block' }}>
+                        <span className="hide-sm">{money(v.pnl, ctx.ccy, { compact: true, sign: true })}</span>
+                        <span className="show-sm">{shortNum(v.pnl)}</span>
+                      </span>
                       <span className="n">{v.trades} trade{v.trades === 1 ? '' : 's'}</span>
                     </span>
                   ) : null}
                 </>
               );
               return v ? (
-                <Link key={d} href={`/journal/${d}`} className={`day ${cls} ${d === today ? 'today' : ''}`}>{inner}</Link>
+                <Link key={d} href={`/journal/${d}`} className={`day ${cls} ${d === today ? 'today' : ''}`}
+                  style={{ ['--a' as string]: (0.14 + 0.5 * Math.sqrt(Math.abs(v.pnl) / maxAbs)).toFixed(2) }}>{inner}</Link>
               ) : (
                 <Link key={d} href={`/journal/${d}`} className={`day ${d === today ? 'today' : ''}`} style={{ opacity: 0.6 }}>{inner}</Link>
               );
@@ -96,7 +106,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
 
         <div className="two even">
           <section className="card">
-            <div className="card-head"><h2>Weeks</h2></div>
+            <div className="card-head"><h3>Weeks</h3></div>
             <table className="t num">
               <tbody>
                 {weeks.map((w) => (
@@ -106,7 +116,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
             </table>
           </section>
           <section className="card">
-            <div className="card-head"><h2>Last 12 months</h2></div>
+            <div className="card-head"><h3>Last 12 months</h3></div>
             <div className="grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
               {months.map((m) => (
                 <Link key={m.m} href={`/calendar?m=${m.m}`} className={`kpi ${m.m === ym ? 'hero' : ''}`} style={{ padding: 8, gridColumn: 'auto', outline: m.m === ym ? '2px solid var(--accent)' : undefined }}>

@@ -12,9 +12,9 @@ export function CcyToggle({ base, baseCcy, tradeCcy }: { base: boolean; baseCcy:
     start(() => router.refresh());
   };
   return (
-    <div className="chips" style={{ opacity: pending ? 0.6 : 1 }} aria-label="Currency">
-      <button type="button" className={`chip ${!base ? 'on' : ''}`} onClick={() => set('trade')}>{tradeCcy}</button>
-      <button type="button" className={`chip ${base ? 'on' : ''}`} onClick={() => set('base')}>{baseCcy}</button>
+    <div className="seg" style={{ opacity: pending ? 0.6 : 1 }} aria-label="Currency">
+      <button type="button" className={!base ? 'on' : ''} onClick={() => set('trade')}>{tradeCcy}</button>
+      <button type="button" className={base ? 'on' : ''} onClick={() => set('base')}>{baseCcy}</button>
     </div>
   );
 }

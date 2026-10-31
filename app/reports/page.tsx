@@ -4,7 +4,7 @@ import { groupBy, holdBucket, marketParts, maxDrawdown, computeStats, type Bucke
 import { traderScore } from '@/lib/score';
 import { money, pct, monthLabel, WEEKDAY_NAMES, pnlClass } from '@/lib/format';
 import { TopBar, RangeChips, NoData, Money } from '@/components/ui';
-import { HBars, Gauge } from '@/components/charts';
+import { HBars, Radar } from '@/components/charts';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,7 +12,7 @@ function BucketCard({ title, rows, ccy, link }: { title: string; rows: Bucket[];
   if (!rows.length) return null;
   return (
     <section className="card">
-      <div className="card-head"><h2>{title}</h2></div>
+      <div className="card-head"><h3>{title}</h3></div>
       <HBars ccy={ccy} rows={rows.map((b) => ({ label: b.label, value: b.pnl, sub: `${b.trades} · ${pct(b.wins / b.trades, 0)}` }))} />
       {link && (
         <div className="chips" style={{ marginTop: 8 }}>
@@ -73,12 +73,12 @@ export default async function Reports({ searchParams }: { searchParams: Promise<
   return (
     <>
       <TopBar title="Reports" ctx={ctx} />
-      <main className="main stack">
+      <main className="main">
         <div className="page-head"><h1>Reports</h1><RangeChips sp={sp} path="/reports" current={ctx.range.id} /></div>
 
         <div className="two">
           <section className="card">
-            <div className="card-head"><h2>Performance summary</h2></div>
+            <div className="card-head"><h3>Performance summary</h3></div>
             <table className="t num">
               <tbody>
                 {([
@@ -101,8 +101,9 @@ export default async function Reports({ searchParams }: { searchParams: Promise<
             </table>
           </section>
           <section className="card">
-            <div className="card-head"><h2>Trader score</h2></div>
-            <div style={{ display: 'grid', placeItems: 'center' }}><Gauge value={score.total} label="out of 100" /></div>
+            <div className="card-head"><h3>Trader score</h3></div>
+            <div style={{ display: 'grid', placeItems: 'center' }}><Radar parts={score.parts} /></div>
+            <div className="row" style={{ justifyContent: 'center', margin: '4px 0 8px' }}><span className="pill lg"><span className="grad-text" style={{ fontWeight: 750 }}>{Math.round(score.total)}</span><span className="faint">/100</span></span></div>
             <table className="t num" style={{ marginTop: 8 }}>
               <tbody>{score.parts.map((p) => (<tr key={p.label}><td className="muted">{p.label}</td><td className="r">{p.detail}</td><td className="r">{Math.round(p.score)}</td></tr>))}</tbody>
             </table>
@@ -110,7 +111,7 @@ export default async function Reports({ searchParams }: { searchParams: Promise<
         </div>
 
         <section className="card">
-          <div className="card-head"><h2>By month</h2></div>
+          <div className="card-head"><h3>By month</h3></div>
           <div className="scroll-x">
             <table className="t num">
               <thead><tr><th>Month</th><th className="r">Trades</th><th className="r">Win %</th><th className="r">PF</th><th className="r">Fees</th><th className="r">Net</th></tr></thead>

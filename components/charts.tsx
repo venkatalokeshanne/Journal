@@ -104,3 +104,75 @@ export function Gauge({ value, label }: { value: number; label: string }) {
     </svg>
   );
 }
+
+/** Small area sparkline for the hero card. */
+export function Spark({ values, height = 84 }: { values: number[]; height?: number }) {
+  if (values.length < 2) return null;
+  const W = 400, H = height;
+  const min = Math.min(...values), max = Math.max(...values);
+  const span = max - min || 1;
+  const pts = values.map((v, i) => [(i / (values.length - 1)) * W, 4 + (1 - (v - min) / span) * (H - 8)]);
+  const line = pts.map((p, i) => `${i ? 'L' : 'M'}${p[0].toFixed(1)},${p[1].toFixed(1)}`).join('');
+  const up = values[values.length - 1] >= values[0];
+  const c = up ? 'var(--pos)' : 'var(--neg)';
+  const id = `sp${up ? 'u' : 'd'}${values.length}`;
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" preserveAspectRatio="none" aria-hidden>
+      <defs>
+        <linearGradient id={id} x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={c} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={c} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={`${line}L${W},${H}L0,${H}Z`} fill={`url(#${id})`} />
+      <path d={line} fill="none" stroke={c} strokeWidth="2" vectorEffect="non-scaling-stroke" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+/** Semicircle gauge (0..1) used inside KPI cards. */
+export function SemiGauge({ value, color, size = 74, children }: { value: number; color?: string; size?: number; children?: React.ReactNode }) {
+  const v = Math.max(0, Math.min(1, value));
+  const r = 30, c = Math.PI * r;
+  const col = color ?? (v >= 0.6 ? 'var(--pos)' : v >= 0.4 ? 'var(--warn)' : 'var(--neg)');
+  return (
+    <svg viewBox="0 0 74 44" width={size} height={(size * 44) / 74} aria-hidden>
+      <path d="M7 38 A30 30 0 0 1 67 38" fill="none" stroke="var(--surface-3)" strokeWidth="7" strokeLinecap="round" />
+      <path d="M7 38 A30 30 0 0 1 67 38" fill="none" stroke={col} strokeWidth="7" strokeLinecap="round" strokeDasharray={`${v * c} ${c}`} />
+      {children}
+    </svg>
+  );
+}
+
+/** Radar chart for the trader score (values 0..100). */
+export function Radar({ parts, size = 230 }: { parts: { label: string; score: number }[]; size?: number }) {
+  const n = parts.length, cx = 120, cy = 112, R = 76;
+  const pt = (i: number, r: number) => {
+    const a = -Math.PI / 2 + (i / n) * Math.PI * 2;
+    return [cx + Math.cos(a) * r, cy + Math.sin(a) * r];
+  };
+  const ring = (f: number) => parts.map((_, i) => pt(i, R * f).map((v) => v.toFixed(1)).join(',')).join(' ');
+  const shape = parts.map((p, i) => pt(i, (R * Math.max(4, p.score)) / 100).map((v) => v.toFixed(1)).join(',')).join(' ');
+  return (
+    <svg viewBox="-40 0 320 228" width="100%" style={{ maxWidth: size + 60 }} role="img" aria-label="Trader score breakdown">
+      <defs>
+        <linearGradient id="radarFill" x1="0" x2="1" y1="0" y2="1">
+          <stop offset="0%" stopColor="#8d7dff" stopOpacity="0.55" />
+          <stop offset="100%" stopColor="#2dd4ef" stopOpacity="0.35" />
+        </linearGradient>
+      </defs>
+      {[0.25, 0.5, 0.75, 1].map((f) => <polygon key={f} points={ring(f)} fill="none" stroke="var(--line-strong)" strokeWidth="1" />)}
+      {parts.map((_, i) => { const [x, y] = pt(i, R); return <line key={i} x1={cx} y1={cy} x2={x} y2={y} stroke="var(--line)" />; })}
+      <polygon points={shape} fill="url(#radarFill)" stroke="#8d7dff" strokeWidth="1.8" strokeLinejoin="round" />
+      {parts.map((p, i) => { const [x, y] = pt(i, (R * Math.max(4, p.score)) / 100); return <circle key={i} cx={x} cy={y} r="3.2" fill="#fff" stroke="#8d7dff" strokeWidth="1.5" />; })}
+      {parts.map((p, i) => {
+        const [x, y] = pt(i, R + 20);
+        return (
+          <text key={p.label} x={x} y={y} textAnchor={Math.abs(x - cx) < 8 ? 'middle' : x > cx ? 'start' : 'end'} fontSize="10" fill="var(--muted)">
+            {p.label}<tspan x={x} dy="12" fill="var(--faint)">{Math.round(p.score)}</tspan>
+          </text>
+        );
+      })}
+    </svg>
+  );
+}

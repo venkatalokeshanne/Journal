@@ -8,7 +8,7 @@ export default function More() {
   return (
     <>
       <TopBar title="More" />
-      <main className="main stack">
+      <main className="main">
         <h1>More</h1>
         <section className="card" style={{ padding: 6 }}>
           {EXTRA_LINKS.map((l) => (

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { getCtx, one, qs, type SP } from '@/lib/view';
 import { computeStats } from '@/lib/engine';
 import { money, pct } from '@/lib/format';
-import { TopBar, RangeChips, TradeRow, NoData } from '@/components/ui';
+import { TopBar, PageHead, RangeChips, TradeRow, NoData, Kpi } from '@/components/ui';
 
 export const dynamic = 'force-dynamic';
 const PAGE = 40;
@@ -63,16 +63,15 @@ export default async function Trades({ searchParams }: { searchParams: Promise<S
   return (
     <>
       <TopBar title="Trades" ctx={ctx} />
-      <main className="main stack">
-        <div className="page-head">
-          <h1>Trades</h1>
+      <main className="main">
+        <PageHead title="Trades" sub={`${list.length} ${f.status === 'open' ? 'open' : f.status === 'all' ? '' : 'closed'} trades`}>
           <RangeChips sp={sp} path="/trades" current={f.day ? 'custom' : ctx.range.id} />
-        </div>
+        </PageHead>
 
         <details className="card">
           <summary className="row between">
-            <h2>Filters {activeFilters ? <span className="badge accent">{activeFilters}</span> : null}</h2>
-            <span className="small muted">Sort · {f.sort}</span>
+            <span className="row"><h3>Filters</h3>{activeFilters ? <span className="badge accent">{activeFilters} active</span> : null}</span>
+            <span className="pill">Sort · {f.sort} ▾</span>
           </summary>
           <form className="form-grid" style={{ marginTop: 12 }} method="get">
             {['range', 'from', 'to'].map((k) => one(sp[k]) ? <input key={k} type="hidden" name={k} value={one(sp[k])} /> : null)}
@@ -102,13 +101,13 @@ export default async function Trades({ searchParams }: { searchParams: Promise<S
           </form>
         </details>
 
-        <div className="kpis">
-          <div className="kpi"><div className="label">Trades</div><div className="value num">{list.length}</div></div>
-          <div className="kpi"><div className="label">Net P&L</div><div className={`value num ${s.net >= 0 ? 'pos' : 'neg'}`}>{money(s.net, ctx.ccy, { sign: true })}</div></div>
-          <div className="kpi"><div className="label">Win rate</div><div className="value num">{pct(s.winRate)}</div></div>
-          <div className="kpi"><div className="label">Profit factor</div><div className="value num">{s.profitFactor ? s.profitFactor.toFixed(2) : '—'}</div></div>
-          <div className="kpi"><div className="label">Expectancy</div><div className={`value num ${s.expectancy >= 0 ? 'pos' : 'neg'}`}>{money(s.expectancy, ctx.ccy, { sign: true })}</div></div>
-          <div className="kpi"><div className="label">Fees</div><div className="value num">{money(-s.commissions, ctx.ccy)}</div></div>
+        <div className="kpis six">
+          <Kpi icon="count" label="Trades" value={list.length} sub={`${s.wins}W · ${s.losses}L`} />
+          <Kpi icon="pnl" label="Net P&L" value={money(s.net, ctx.ccy, { sign: true })} tone={s.net} />
+          <Kpi icon="target" label="Win rate" value={pct(s.winRate)} />
+          <Kpi icon="scale" label="Profit factor" value={s.profitFactor ? s.profitFactor.toFixed(2) : '—'} />
+          <Kpi icon="edge" label="Expectancy" value={money(s.expectancy, ctx.ccy, { sign: true })} tone={s.expectancy} />
+          <Kpi icon="fee" label="Fees" value={money(-s.commissions, ctx.ccy)} />
         </div>
 
         {f.day && (
@@ -118,7 +117,7 @@ export default async function Trades({ searchParams }: { searchParams: Promise<S
           </div>
         )}
 
-        <section className="card" style={{ padding: '4px 12px' }}>
+        <section className="card" style={{ padding: '6px 8px' }}>
           <div className="list">
             {shown.map((t) => <TradeRow key={t.key} t={t} ctx={ctx} note={ctx.notes.get(t.key)} />)}
             {!shown.length && <p className="muted" style={{ padding: 16 }}>No trades match these filters.</p>}

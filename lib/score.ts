@@ -13,10 +13,10 @@ export function traderScore(s: Stats, days: DayPnl[], maxDD: number): { total: n
   const parts: ScorePart[] = [
     { label: 'Win rate', score: lerp(s.winRate, 0.3, 0.7), detail: `${(s.winRate * 100).toFixed(0)}%` },
     { label: 'Profit factor', score: lerp(s.profitFactor ?? (s.grossProfit > 0 ? 3 : 0), 0.5, 2.5), detail: s.profitFactor ? s.profitFactor.toFixed(2) : '—' },
-    { label: 'Avg win / loss', score: lerp(s.winLossRatio ?? 0, 0.5, 2.5), detail: s.winLossRatio ? s.winLossRatio.toFixed(2) : '—' },
+    { label: 'Win/loss size', score: lerp(s.winLossRatio ?? 0, 0.5, 2.5), detail: s.winLossRatio ? s.winLossRatio.toFixed(2) : '—' },
     { label: 'Green days', score: lerp(green, 0.3, 0.7), detail: `${(green * 100).toFixed(0)}%` },
-    { label: 'Drawdown control', score: lerp(1 - ddRatio, 0, 0.9), detail: `${(ddRatio * 100).toFixed(0)}% of profits` },
-    { label: 'Recovery factor', score: lerp(recovery, 0, 3), detail: recovery.toFixed(2) },
+    { label: 'Drawdown', score: lerp(1 - ddRatio, 0, 0.9), detail: `${(ddRatio * 100).toFixed(0)}% of profits` },
+    { label: 'Recovery', score: lerp(recovery, 0, 3), detail: recovery.toFixed(2) },
   ];
   return { total: parts.reduce((a, p) => a + p.score, 0) / parts.length, parts };
 }
