@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server';
 import type Anthropic from '@anthropic-ai/sdk';
 import { requireUser } from '@/lib/auth';
-import { getCtx } from '@/lib/view';
+import { getCtx, getRules, type Ctx } from '@/lib/view';
+import { evaluateDay } from '@/lib/rules';
+import type { DayPlan } from '@/lib/plan';
 import { loadJournal, loadPlan, loadPlans } from '@/lib/data';
 import { addDays, weekdayOf } from '@/lib/time';
 import { DEEP, FAST, generate, ndjson, saveNote, systemPrompt } from '@/lib/ai/run';
@@ -9,6 +11,13 @@ import { TOOLS, dayContext, planContext, profile, runTool, tradeContext, weekCon
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 120;
+
+async function rulesText(ctx: Ctx, day: string, plan: DayPlan | null) {
+  const { rules } = await getRules(ctx);
+  const st = evaluateDay(rules, ctx.trips, day, plan, (t) => t.realized, ctx.tradeCcy);
+  const mark = { kept: 'KEPT', broken: 'BROKEN', idle: 'not tested yet', manual: 'reminder' } as const;
+  return `MY RULES (built from my own history) and their status on ${day}:\n${st.map((r) => `- ${r.title}: ${mark[r.status]}${r.status === 'broken' ? ` (${r.detail})` : ''}`).join('\n')}${rules.focus.length ? `\nMy best tickers: ${rules.focus.join(', ')}.` : ''}${rules.blacklist.length ? ` My no-trade list: ${rules.blacklist.join(', ')}.` : ''}`;
+}
 
 const isDate = (s: unknown): s is string => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
 
@@ -21,13 +30,13 @@ One sentence: was this a good, okay or bad day for my *process* (not just P&L)? 
 ## What hurt
 1-3 bullets, biggest cost first, each with the amount and the trade(s).
 ## Plan vs reality
-Did I follow my plan and rules? Name unplanned trades and any rule I broke (max trades, max loss, checklist).
+Did I follow my plan and MY RULES? Name each rule I broke with the trade(s) and what it cost, and any unplanned trades.
 ## Tomorrow's rule
 One specific, checkable rule for tomorrow based on today.
 If I didn't trade, judge my plan and discipline instead and keep it short.`,
   plan: `Check this pre-market plan before the open, in at most 180 words.
 Start with "## Ready" or "## Not ready yet" and one line why.
-Then "## Fix before the open": prioritized bullets (most important first) for concrete problems only, e.g. missing stop or target, risk-to-reward below 1.5, levels that contradict the bias (stop above entry on a long, below entry on a short), more tickers than my max trades, no max daily loss, unticked checklist items, and tickers, weekdays or hours where my history loses money (quote the numbers).
+Then "## Fix before the open": prioritized bullets (most important first) for concrete problems only, e.g. missing stop or target, risk-to-reward below 1.5, levels that contradict the bias (stop above entry on a long, below entry on a short), more tickers than my max trades, no max daily loss, unticked checklist items, tickers on my no-trade list, anything that conflicts with MY RULES, and tickers, weekdays or hours where my history loses money (quote the numbers).
 Then "## Watch out": at most 2 bullets on my known patterns that matter today.
 Don't praise what's fine. If the plan is empty, tell me the 3 things to fill in first.`,
   trade: `Coach me on this single trade in at most 200 words.
@@ -63,7 +72,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ kind: s
       const [plan, journal] = await Promise.all([loadPlan(body.day), loadJournal()]);
       const text = await generate({
         kind, model: FAST, effort: 'low', emit, system: systemPrompt(ctx.ccy, prof),
-        messages: [{ role: 'user', content: `${dayContext(ctx, body.day, plan, journal.get(body.day))}\n\n${PROMPTS.debrief}` }],
+        messages: [{ role: 'user', content: `${dayContext(ctx, body.day, plan, journal.get(body.day))}\n\n${await rulesText(ctx, body.day, plan)}\n\n${PROMPTS.debrief}` }],
       });
       if (text) await saveNote('debrief', body.day, text, FAST);
       return;
@@ -75,7 +84,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ kind: s
       if (!plan) throw new Error('Save a plan first (add a ticker or tick an item), then run the check.');
       const text = await generate({
         kind, model: FAST, effort: 'low', emit, system: systemPrompt(ctx.ccy, prof),
-        messages: [{ role: 'user', content: `${planContext(ctx, plan)}\n\n${PROMPTS.plan}` }],
+        messages: [{ role: 'user', content: `${planContext(ctx, plan)}\n\n${await rulesText(ctx, body.day, plan)}\n\n${PROMPTS.plan}` }],
       });
       if (text) await saveNote('plan', body.day, text, FAST);
       return;

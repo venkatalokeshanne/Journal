@@ -4,6 +4,8 @@ import { redirect } from 'next/navigation';
 import * as data from '@/lib/data';
 import { supabaseServer, isAllowed, authEnabled, requireUser } from '@/lib/auth';
 import { sanitizePlan, sanitizeDefaults } from '@/lib/plan';
+import { sanitizeRules, suggestRules } from '@/lib/rules';
+import { buildTrips } from '@/lib/engine';
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? '').trim();
 const numOrNull = (v: string) => {
@@ -106,6 +108,15 @@ export async function appendReviewAction(day: string, text: string) {
   await data.saveJournalDay({ ...j, review: j.review.trim() ? `${j.review.trim()}\n\n${clean}` : clean });
   revalidatePath('/journal', 'layout');
   return { ok: true, msg: 'Saved to your review' };
+}
+
+export async function saveRulesAction(raw: unknown) {
+  await requireUser();
+  const fallback = suggestRules(buildTrips(await data.loadExecutions()), (t) => t.realized);
+  await data.saveRules(sanitizeRules(raw, fallback));
+  revalidatePath('/rules');
+  revalidatePath('/plan', 'layout');
+  return { ok: true, msg: 'Saved' };
 }
 
 export async function login(_: unknown, f: FormData) {

@@ -15,6 +15,7 @@ export const ICONS: Record<string, ReactNode> = {
   playbook: <I d="M12 3 3 8l9 5 9-5zM3 13l9 5 9-5" />,
   plan: <I d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1zM8 6H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-2M9 12l2 2 4-4M9 17h6" />,
   coach: <I d="M12 3l1.8 4.6L18.5 9l-4.7 1.4L12 15l-1.8-4.6L5.5 9l4.7-1.4zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9z" />,
+  rules: <I d="M9 6h11M9 12h11M9 18h11M4 6l1 1 2-2M4 12l1 1 2-2M4 18l1 1 2-2" />,
   import: <I d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3" />,
   more: <I d="M5 12h.01M12 12h.01M19 12h.01" />,
 };
@@ -26,6 +27,7 @@ export const MAIN = [
   { href: '/calendar', label: 'Calendar', icon: 'calendar' },
 ];
 export const EXTRA = [
+  { href: '/rules', label: 'My rules', icon: 'rules' },
   { href: '/coach', label: 'AI Coach', icon: 'coach' },
   { href: '/journal', label: 'Journal', icon: 'journal' },
   { href: '/reports', label: 'Reports', icon: 'reports' },

@@ -1,6 +1,7 @@
 import { q } from './db';
 import type { Exec, JournalDay, Setup, TradeNote } from './types';
 import { DEFAULTS, sanitizeDefaults, sanitizePlan, type DayPlan, type PlanDefaults } from './plan';
+import type { RulesConfig } from './rules';
 
 const iso = (v: unknown) => (v instanceof Date ? v.toISOString() : new Date(String(v)).toISOString());
 const n = (v: unknown) => (v === null || v === undefined ? null : Number(v));
@@ -176,6 +177,20 @@ export async function loadPlanDefaults(): Promise<PlanDefaults> {
 export async function savePlanDefaults(v: PlanDefaults) {
   await q(
     `insert into settings (key, value, updated_at) values ('plan_defaults', $1, now())
+     on conflict (key) do update set value = excluded.value, updated_at = now()`,
+    [JSON.stringify(v)],
+  );
+}
+
+// ---------- personal rules ----------
+export async function loadRulesRaw(): Promise<unknown | null> {
+  const [r] = await q(`select value from settings where key = 'rules'`);
+  return r ? r.value : null;
+}
+
+export async function saveRules(v: RulesConfig) {
+  await q(
+    `insert into settings (key, value, updated_at) values ('rules', $1, now())
      on conflict (key) do update set value = excluded.value, updated_at = now()`,
     [JSON.stringify(v)],
   );

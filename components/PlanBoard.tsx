@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { savePlanAction, savePlanDefaultsAction } from '@/app/actions';
 import { AiPanel } from './AiPanel';
+import type { RuleDayStatus } from '@/lib/rules';
 import {
   LEVEL_KINDS, newCheck, planVsReality, riskReward, uid,
   type CheckItem, type DayPlan, type DayReality, type LevelKind, type PlanDefaults, type PlanTicker,
@@ -77,8 +78,8 @@ function Seg<T extends string>({ value, options, onChange }: { value: T | null; 
 }
 
 // ---------------- ticker card ----------------
-function TickerCard({ t, setups, reality, ccy, day, onChange, onRemove }: {
-  t: PlanTicker; setups: SetupLite[]; reality?: { n: number; pnl: number }; ccy: string; day: string;
+function TickerCard({ t, setups, reality, ccy, day, onChange, onRemove, warning }: {
+  t: PlanTicker; setups: SetupLite[]; reality?: { n: number; pnl: number }; ccy: string; day: string; warning?: string | null;
   onChange: (t: PlanTicker) => void; onRemove: () => void;
 }) {
   const [edit, setEdit] = useState(t.levels.length === 0);
@@ -105,6 +106,8 @@ function TickerCard({ t, setups, reality, ccy, day, onChange, onRemove }: {
         <Seg value={t.bias} onChange={(v) => onChange({ ...t, bias: v ?? 'WAIT' })}
           options={[{ v: 'LONG', label: 'Long', tone: 'var(--pos)' }, { v: 'SHORT', label: 'Short', tone: 'var(--neg)' }, { v: 'WAIT', label: 'Wait' }]} />
       </header>
+
+      {warning && <div className="toast err small" style={{ margin: 0 }}>⚠ {warning}</div>}
 
       {rr && (
         <div className="rr-strip" style={{ borderColor: biasTone }}>
@@ -184,10 +187,11 @@ function TickerCard({ t, setups, reality, ccy, day, onChange, onRemove }: {
 }
 
 // ---------------- board ----------------
-export function PlanBoard({ initial, isNew, defaults, previous, reality, setups, recentSymbols, ccy, tradeCcy, today, aiEnabled, aiCheck }: {
+export function PlanBoard({ initial, isNew, defaults, previous, reality, setups, recentSymbols, ccy, tradeCcy, today, aiEnabled, aiCheck, ruleStatus, focus, blacklist, symbolPnl }: {
   initial: DayPlan; isNew: boolean; defaults: PlanDefaults; previous: DayPlan | null; reality: DayReality;
   setups: SetupLite[]; recentSymbols: string[]; ccy: string; tradeCcy: string; today: string;
   aiEnabled: boolean; aiCheck: { content: string; createdAt: string } | null;
+  ruleStatus: RuleDayStatus[]; focus: string[]; blacklist: string[]; symbolPnl: Record<string, number>;
 }) {
   const [plan, setPlan] = useState(initial);
   const [status, setStatus] = useState<'saved' | 'saving' | 'dirty' | 'error' | 'idle'>(isNew ? 'idle' : 'saved');
@@ -268,6 +272,38 @@ export function PlanBoard({ initial, isNew, defaults, previous, reality, setups,
 
       <div className="plan-grid">
         <div className="plan-side">
+          <section className="card o0 rules-card">
+            <div className="card-head">
+              <h3>My rules</h3>
+              <div className="row" style={{ gap: 6 }}>
+                {ruleStatus.some((r) => r.status === 'broken') && <span className="pill neg">{ruleStatus.filter((r) => r.status === 'broken').length} broken</span>}
+                {ruleStatus.some((r) => r.status === 'kept') && <span className="pill pos">{ruleStatus.filter((r) => r.status === 'kept').length} kept</span>}
+                <Link href="/rules" className="link">Edit ›</Link>
+              </div>
+            </div>
+            <div>
+              {ruleStatus.map((r) => (
+                <div key={r.id} className={`rule-row ${r.status}`}>
+                  <span className={`ic ${r.status}`}>{r.status === 'kept' ? '✓' : r.status === 'broken' ? '✕' : r.status === 'manual' ? '•' : '–'}</span>
+                  <span className="t">{r.title}</span>
+                  <span className="d">{r.status === 'idle' || r.status === 'manual' ? '' : r.detail}</span>
+                </div>
+              ))}
+            </div>
+            {focus.length > 0 && (
+              <div style={{ marginTop: 12 }}>
+                <div className="small muted" style={{ marginBottom: 6 }}>Your edge: tap to add to the watchlist</div>
+                <div className="chips" style={{ flexWrap: 'wrap' }}>
+                  {focus.map((s) => (
+                    <button key={s} type="button" className="chip" onClick={() => addTicker(s)} disabled={plan.tickers.some((t) => t.symbol === s)}>
+                      <span className="pos" style={{ marginRight: 6 }}>●</span>{s}<span className="faint" style={{ marginLeft: 6 }}>{fmtMoney(symbolPnl[s] ?? 0, ccy, true).replace(/\.\d+$/, '')}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </section>
+
           <section className="card o1">
             <div className="card-head"><h3>Day rules</h3>
               <button type="button" className="link" onClick={saveDefaults} style={{ background: 'none', border: 0, cursor: 'pointer' }}>Save as default</button></div>
@@ -374,6 +410,7 @@ export function PlanBoard({ initial, isNew, defaults, previous, reality, setups,
             <div className="tgrid o4">
               {plan.tickers.map((t) => (
                 <TickerCard key={t.id} t={t} setups={setups} reality={reality.bySymbol[t.symbol]} ccy={ccy} day={plan.day}
+                  warning={blacklist.includes(t.symbol) ? `On your no-trade list: ${fmtMoney(symbolPnl[t.symbol] ?? 0, ccy, true)} all-time` : null}
                   onChange={(nt) => upTicker(t.id, nt)} onRemove={() => setPlan((p) => ({ ...p, tickers: p.tickers.filter((x) => x.id !== t.id) }))} />
               ))}
             </div>

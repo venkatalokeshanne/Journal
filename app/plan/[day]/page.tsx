@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation';
-import { getCtx } from '@/lib/view';
+import { getCtx, getRules } from '@/lib/view';
+import { evaluateDay } from '@/lib/rules';
 import { loadPlan, loadPlanDefaults, loadPlans } from '@/lib/data';
 import { emptyPlan, type DayReality } from '@/lib/plan';
 import { todayInTz } from '@/lib/time';
@@ -28,6 +29,10 @@ export default async function PlanDay({ params }: { params: Promise<{ day: strin
     .filter((e) => e.tradeDate === day && (ctx.includeForex || e.assetClass !== 'CASH'))
     .reduce((s, e) => s + e.realizedPnl, 0);
 
+  const { rules } = await getRules(ctx);
+  const ruleStatus = evaluateDay(rules, ctx.trips, day, saved, (t) => t.realized, ctx.tradeCcy);
+  const symbolPnl: Record<string, number> = {};
+  for (const t of ctx.trips) if (t.status === 'CLOSED') symbolPnl[t.symbol] = (symbolPnl[t.symbol] ?? 0) + ctx.pnl(t);
   const recentSymbols = [...new Set(ctx.trips.slice(0, 80).map((t) => t.symbol))].slice(0, 12);
 
   return (
@@ -40,7 +45,11 @@ export default async function PlanDay({ params }: { params: Promise<{ day: strin
           isNew={!saved}
           defaults={defaults}
           previous={previous}
-          reality={{ trades: dayTrips.length, dayPnl, bySymbol }}
+          reality={{ trades: dayTrips.length, dayPnl, bySymbol, rules: { kept: ruleStatus.filter((r) => r.status === 'kept').length, broken: ruleStatus.filter((r) => r.status === 'broken').length } }}
+          ruleStatus={ruleStatus}
+          focus={rules.focus}
+          blacklist={rules.blacklist}
+          symbolPnl={symbolPnl}
           setups={ctx.setups.filter((s) => !s.archived).map((s) => ({ id: s.id, name: s.name, rules: s.rules }))}
           recentSymbols={recentSymbols}
           ccy={ctx.ccy}

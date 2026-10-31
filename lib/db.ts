@@ -154,14 +154,39 @@ async function connect(): Promise<DbClient> {
     const db = new PGlite(loc && loc !== 'memory://' ? loc : undefined);
     return { query: (t, p) => db.query(t, p as any[]) as Promise<{ rows: any[] }> };
   }
-  return new Pool({
-    connectionString: url,
+  const serverless = !!process.env.VERCEL;
+  const pool = new Pool({
+    connectionString: serverless ? transactionPooler(url) : url,
     ssl: /localhost|127\.0\.0\.1/.test(url) ? undefined : { rejectUnauthorized: false },
-    max: 5,
+    // Supabase's session pooler allows only ~15 clients in total, shared by every server instance.
+    max: serverless ? 2 : 3,
+    idleTimeoutMillis: serverless ? 5_000 : 15_000,
+    connectionTimeoutMillis: 10_000,
   });
+  pool.on('error', () => {}); // a dropped idle connection must not crash the server; the next query reconnects
+  return pool;
+}
+
+/**
+ * On serverless (Vercel) many short-lived instances each open connections, which exhausts Supabase's
+ * session pooler (port 5432, ~15 clients). Its transaction pooler (port 6543) on the same host shares
+ * connections per query and is made for this.
+ */
+function transactionPooler(url: string) {
+  try {
+    const u = new URL(url);
+    if (u.hostname.endsWith('pooler.supabase.com') && (u.port === '5432' || u.port === '')) u.port = '6543';
+    return u.toString();
+  } catch {
+    return url;
+  }
 }
 
 export async function migrate(c: DbClient) {
+  // Fast path: the newest table already exists, so the schema is current (one query per cold start).
+  // When adding a table to SCHEMA, point this check at it.
+  const [r] = (await c.query(`select to_regclass('public.ai_usage') is not null as ok`)).rows;
+  if (r?.ok) return;
   for (const stmt of SCHEMA.split(';').map((s) => s.trim()).filter(Boolean)) {
     await c.query(stmt);
   }

@@ -4,6 +4,8 @@ import { loadExecutions, loadNotes, loadSetups } from './data';
 import { buildTrips, computeStats, dailyPnl, type PnlFn } from './engine';
 import { todayInTz, addDays } from './time';
 import type { Exec, Trip, TradeNote, Setup } from './types';
+import { loadRulesRaw } from './data';
+import { sanitizeRules, suggestRules, type RulesConfig } from './rules';
 
 export type SP = Record<string, string | string[] | undefined>;
 export const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? '';
@@ -83,6 +85,13 @@ export async function getCtx(sp: SP = {}): Promise<Ctx> {
     inRange,
     includeForex,
   };
+}
+
+/** The trader's rules: their saved version, or suggestions computed from their own history. */
+export async function getRules(c: Ctx): Promise<{ rules: RulesConfig; suggested: boolean }> {
+  const suggestion = suggestRules(c.trips, (t) => t.realized);
+  const raw = await loadRulesRaw();
+  return raw ? { rules: sanitizeRules(raw, suggestion), suggested: false } : { rules: suggestion, suggested: true };
 }
 
 export function closedInRange(c: Ctx) {

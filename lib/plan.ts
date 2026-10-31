@@ -112,6 +112,7 @@ export interface DayReality {
   trades: number; // round trips opened this day
   dayPnl: number; // realized, trade currency (for max-loss rule)
   bySymbol: Record<string, { n: number; pnl: number }>; // display currency
+  rules?: { kept: number; broken: number };
 }
 
 export function planVsReality(plan: DayPlan, r: DayReality) {
@@ -138,6 +139,9 @@ export function planVsReality(plan: DayPlan, r: DayReality) {
   }
   if (plannedN + unplannedN > 0) {
     parts.push({ label: 'Trades from plan', score: (plannedN / (plannedN + unplannedN)) * 100, detail: `${plannedN}/${plannedN + unplannedN}` });
+  }
+  if (r.rules && r.trades > 0 && r.rules.kept + r.rules.broken > 0) {
+    parts.push({ label: 'My rules kept', score: (r.rules.kept / (r.rules.kept + r.rules.broken)) * 100, detail: `${r.rules.kept}/${r.rules.kept + r.rules.broken}` });
   }
   const score = parts.length ? parts.reduce((a, p) => a + p.score, 0) / parts.length : null;
   return { plannedN, plannedPnl, unplannedN, unplannedPnl, unplannedSymbols, parts, score };
