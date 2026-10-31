@@ -134,7 +134,9 @@ h3 { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: upp
   border: 1px solid var(--line-strong);
   border-radius: 24px;
   box-shadow: 0 20px 40px -16px rgba(0, 0, 0, 0.6);
+  transition: transform 0.25s ease, opacity 0.2s ease;
 }
+.bottomnav.away { transform: translateY(calc(100% + 24px)); opacity: 0; pointer-events: none; }
 .bottomnav a {
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
   border-radius: 18px; color: var(--faint); font-size: 10.5px; font-weight: 550;
@@ -572,5 +574,40 @@ details > summary::-webkit-details-marker { display: none; }
 @media (max-width: 1039px) {
   .plan-grid { display: flex; flex-direction: column; }
   .plan-side, .plan-main { display: contents; }
-  .plan-grid .o1 { order: 1; } .plan-grid .o2 { order: 2; } .plan-grid .o3 { order: 3; } .plan-grid .o4 { order: 4; } .plan-grid .o5 { order: 5; }
+  .plan-grid .o1 { order: 1; } .plan-grid .o2 { order: 2; } .plan-grid .o3 { order: 3; } .plan-grid .o4 { order: 4; } .plan-grid .o5 { order: 5; } .plan-grid .o6 { order: 6; }
 }
+@media (max-width: 420px) { .seg > a, .seg > button { padding: 6px 10px; font-size: 12.5px; } }
+
+/* ============ AI ============ */
+.ai-spark { background: var(--grad); -webkit-background-clip: text; background-clip: text; color: transparent; margin-right: 2px; }
+.ai-card { border-color: color-mix(in srgb, var(--accent) 28%, var(--line)); }
+.ai-card::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 7%, transparent), transparent 45%);
+}
+.ai-card > * { position: relative; z-index: 1; }
+.ai-status { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); padding: 6px 0; }
+.dotpulse { width: 8px; height: 8px; border-radius: 9px; background: var(--accent); animation: pulse 1.1s ease-in-out infinite; }
+@keyframes pulse { 0%, 100% { opacity: 0.35; transform: scale(0.8); } 50% { opacity: 1; transform: scale(1.15); } }
+.md { font-size: 14.5px; line-height: 1.6; }
+.md h4 { margin: 14px 0 4px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 650; }
+.md h4:first-child { margin-top: 0; font-size: 16px; text-transform: none; letter-spacing: -0.01em; color: var(--text); }
+.md p { margin: 4px 0; }
+.md ul { margin: 4px 0; padding-left: 18px; }
+.md li { margin: 3px 0; }
+.md li::marker { color: var(--accent); }
+.md b { color: var(--text); font-weight: 650; }
+.md code { font-family: var(--font-mono); font-size: 0.9em; background: var(--surface-2); padding: 1px 5px; border-radius: 6px; }
+.chat { display: flex; flex-direction: column; min-height: 420px; }
+.chat-empty { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 8px; padding: 20px 4px; }
+.ai-orb { width: 54px; height: 54px; border-radius: 18px; display: grid; place-items: center; font-size: 24px; color: #fff; background: var(--grad); box-shadow: 0 12px 30px -10px color-mix(in srgb, var(--accent) 80%, transparent); }
+.chat-log { display: flex; flex-direction: column; gap: 10px; flex: 1; }
+.bubble { max-width: 92%; padding: 10px 14px; border-radius: 18px; font-size: 14.5px; line-height: 1.5; }
+.bubble.user { align-self: flex-end; background: var(--grad); color: #fff; border-bottom-right-radius: 6px; }
+.bubble.assistant { align-self: flex-start; background: var(--surface-2); border: 1px solid var(--line); border-bottom-left-radius: 6px; }
+.bubble.err { border-color: color-mix(in srgb, var(--neg) 40%, transparent); color: var(--neg); }
+.chat-input { display: flex; gap: 8px; margin-top: 12px; position: sticky; bottom: calc(var(--nav-h) + 20px + env(safe-area-inset-bottom)); }
+.chat-input input { border-radius: 999px; padding-left: 18px; background: var(--surface-solid); }
+.chat-input .btn { width: 46px; min-height: 46px; padding: 0; border-radius: 999px; font-size: 18px; }
+@media (min-width: 960px) { .chat-input { bottom: 16px; } }
+.chat-empty .chip, .coach-cta .chip { flex: 0 1 auto; max-width: 100%; white-space: normal; text-align: center; line-height: 1.3; padding: 8px 13px; }

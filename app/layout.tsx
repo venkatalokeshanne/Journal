@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono } from 'next/font/google';
+import { Suspense } from 'react';
 import { SideNav, BottomNav } from '@/components/Nav';
+import { NavMemory } from '@/components/NavMemory';
 import './globals.css';
 
 const sans = Inter({ subsets: ['latin'], variable: '--font-sans' });
@@ -33,6 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
         </div>
         <BottomNav />
+        <Suspense fallback={null}><NavMemory /></Suspense>
       </body>
     </html>
   );

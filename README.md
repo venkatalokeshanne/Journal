@@ -59,6 +59,17 @@ npm start
 ```
 Open http://localhost:3000, go to **More → Sync & Import → Sync now**, then upload your older CSV files (or use **Backfill**).
 
+## AI coach (optional, about $0.30 a year of daily use)
+Uses **Claude Haiku 5.5** for everyday coaching and **Claude Sonnet 5.5** for the weekly review. Each answer is grounded in your own trades, plans and notes; the app computes all numbers itself and the AI only explains them.
+
+- **Plan → Check my plan**: before the open, finds missing stops, weak risk-to-reward, levels that contradict your bias, and tickers/times where your history loses.
+- **Journal day → Debrief my day**: what went well, what cost you money, plan vs reality, one rule for tomorrow; "Save to my review" puts it in your journal.
+- **Trade page → Coach this trade**: grades your execution and reads your fills.
+- **More → AI Coach**: chat with your journal ("What's my biggest leak?") plus a weekly review.
+- **Spend**: every request is logged with its cost on the Coach page; the app stops at `AI_MONTHLY_LIMIT_USD` (default $5). Also set a limit in the Anthropic console.
+
+Setup: create a key at https://console.anthropic.com → API Keys, then add `ANTHROPIC_API_KEY=...` to `.env.local` and restart. Your trade data (symbols, prices, P&L, notes) is sent to Anthropic's API when you use these features; logins, tokens and passwords never are.
+
 ## Use it on your phone (free hosting)
 1. Push this folder to a private GitHub repository.
 2. Import it at https://vercel.com (free), and add the same variables from `.env.local` under **Settings → Environment Variables**. Always configure the Supabase login.

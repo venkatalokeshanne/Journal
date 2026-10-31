@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { ReactNode } from 'react';
 import { CcyToggle } from './CcyToggle';
 import { MarketStatus } from './MarketStatus';
+import { RangeSeg } from './RangeSeg';
 import { money, pnlClass, dateLabel, marketTime, duration, price, qty } from '@/lib/format';
 import { RANGES, qs, type Ctx, type SP } from '@/lib/view';
 import type { Trip, TradeNote } from '@/lib/types';
@@ -31,16 +32,9 @@ export function PageHead({ title, sub, children }: { title: string; sub?: ReactN
   );
 }
 
-export function RangeChips({ sp, path, current }: { sp: SP; path: string; current: string }) {
-  return (
-    <nav className="seg" aria-label="Date range">
-      {RANGES.map((r) => (
-        <Link key={r.id} href={`${path}${qs(sp, { range: r.id === 'all' ? '' : r.id, from: '', to: '', page: '' })}`} className={current === r.id ? 'on' : ''}>
-          {r.label}
-        </Link>
-      ))}
-    </nav>
-  );
+export function RangeChips({ sp, current }: { sp: SP; path?: string; current: string }) {
+  // Keep other filters, drop the range/page so the remembered range applies.
+  return <RangeSeg ranges={[...RANGES]} current={current} keep={qs(sp, { range: '', from: '', to: '', page: '' })} />;
 }
 
 const KPI_ICONS: Record<string, string> = {

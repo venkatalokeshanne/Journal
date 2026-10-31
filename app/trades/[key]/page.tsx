@@ -7,6 +7,8 @@ import { money, price, qty, duration, dateLabel, marketTime, pnlClass } from '@/
 import { TopBar, Kpi, Money, Avatar } from '@/components/ui';
 import { TradeChart } from '@/components/TradeChart';
 import { TradeNoteForm } from '@/components/forms';
+import { AiPanel } from '@/components/AiPanel';
+import { aiEnabled, loadNote } from '@/lib/ai/run';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +20,7 @@ export default async function TradePage({ params }: { params: Promise<{ key: str
   if (idx < 0) notFound();
   const t = ctx.trips[idx];
   const note = ctx.notes.get(t.key);
-  const dayPlan = await loadPlan(t.openDate);
+  const [dayPlan, coach] = await Promise.all([loadPlan(t.openDate), loadNote('trade', t.key)]);
   const planTicker = dayPlan?.tickers.find((x) => x.symbol === t.symbol || x.symbol === t.underlying) ?? null;
   const planLevels = (planTicker?.levels ?? [])
     .filter((l) => l.price != null)
@@ -92,6 +94,9 @@ export default async function TradePage({ params }: { params: Promise<{ key: str
           <Kpi icon="target" label="R-multiple" value={r != null ? `${r.toFixed(2)}R` : '—'} tone={r ?? undefined}
             sub={risk ? `risk ${money(conv(risk), ctx.ccy)}${planned ? ` · planned ${planned.toFixed(1)}R` : ''}` : 'set a stop below'} />
         </div>
+
+        <AiPanel title="AI trade coach" endpoint="/api/ai/trade" body={{ key: t.key }} saved={coach} enabled={aiEnabled()}
+          cta="Coach this trade" hint="Grades your execution against your plan and rules, reads your fills, and compares with your history on this ticker." />
 
         <div className="two">
           <section className="card">

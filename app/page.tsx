@@ -7,6 +7,7 @@ import { money, pct, duration, dateLabel, qty, price } from '@/lib/format';
 import { TopBar, PageHead, RangeChips, Kpi, TradeRow, NoData, Money, PnlPill, Avatar } from '@/components/ui';
 import { Spark, SemiGauge, Radar } from '@/components/charts';
 import { EquityChart, DailyBars } from '@/components/InteractiveCharts';
+import { SUGGESTIONS } from '@/lib/ai/suggestions';
 
 export const dynamic = 'force-dynamic';
 
@@ -98,6 +99,13 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
             )) : <p className="muted small">Insights appear once you have a few more trades in this range.</p>}
           </section>
         </div>
+
+        <section className="card ai-card coach-cta">
+          <div className="card-head"><h3><span className="ai-spark">✦</span> Ask your coach</h3><Link href="/coach" className="link">Open coach ›</Link></div>
+          <div className="chips" style={{ flexWrap: 'wrap' }}>
+            {SUGGESTIONS.slice(0, 4).map((q) => <Link key={q} className="chip" href={`/coach?q=${encodeURIComponent(q)}`}>{q}</Link>)}
+          </div>
+        </section>
 
         <div className="two">
           <section className="card">

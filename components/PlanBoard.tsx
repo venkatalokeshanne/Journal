@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { savePlanAction, savePlanDefaultsAction } from '@/app/actions';
+import { AiPanel } from './AiPanel';
 import {
   LEVEL_KINDS, newCheck, planVsReality, riskReward, uid,
   type CheckItem, type DayPlan, type DayReality, type LevelKind, type PlanDefaults, type PlanTicker,
@@ -183,9 +184,10 @@ function TickerCard({ t, setups, reality, ccy, day, onChange, onRemove }: {
 }
 
 // ---------------- board ----------------
-export function PlanBoard({ initial, isNew, defaults, previous, reality, setups, recentSymbols, ccy, tradeCcy, today }: {
+export function PlanBoard({ initial, isNew, defaults, previous, reality, setups, recentSymbols, ccy, tradeCcy, today, aiEnabled, aiCheck }: {
   initial: DayPlan; isNew: boolean; defaults: PlanDefaults; previous: DayPlan | null; reality: DayReality;
   setups: SetupLite[]; recentSymbols: string[]; ccy: string; tradeCcy: string; today: string;
+  aiEnabled: boolean; aiCheck: { content: string; createdAt: string } | null;
 }) {
   const [plan, setPlan] = useState(initial);
   const [status, setStatus] = useState<'saved' | 'saving' | 'dirty' | 'error' | 'idle'>(isNew ? 'idle' : 'saved');
@@ -315,7 +317,10 @@ export function PlanBoard({ initial, isNew, defaults, previous, reality, setups,
             <Checklist items={plan.checklist} onChange={(c) => up({ checklist: c })} addLabel="Add a checklist item" />
           </section>
 
-          <section className="card o5">
+          <AiPanel className="o5" title="AI plan check" endpoint="/api/ai/plan" body={{ day: plan.day }} saved={aiCheck} enabled={aiEnabled}
+            cta="Check my plan" hint="Before the open: finds missing stops, weak risk-to-reward, levels that contradict your bias, and tickers or times where your own history loses money." />
+
+          <section className="card o6">
             <div className="card-head"><h3>{hasTrades ? 'Plan vs reality' : 'Readiness'}</h3>
               {pvr.score != null && <span className="pill lg"><span className="grad-text" style={{ fontWeight: 750 }}>{Math.round(pvr.score)}</span><span className="faint">/100</span></span>}</div>
             {hasTrades && (

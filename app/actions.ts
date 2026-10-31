@@ -98,6 +98,16 @@ export async function savePlanDefaultsAction(raw: unknown) {
   return { ok: true, msg: 'Saved as your default' };
 }
 
+export async function appendReviewAction(day: string, text: string) {
+  await requireUser();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || !text.trim()) return { ok: false, msg: 'Nothing to save' };
+  const j = (await data.loadJournal()).get(day) ?? { day, plan: '', review: '', lessons: '', mood: null, discipline: null };
+  const clean = text.replace(/^#{1,4}\s+/gm, '').trim();
+  await data.saveJournalDay({ ...j, review: j.review.trim() ? `${j.review.trim()}\n\n${clean}` : clean });
+  revalidatePath('/journal', 'layout');
+  return { ok: true, msg: 'Saved to your review' };
+}
+
 export async function login(_: unknown, f: FormData) {
   if (!authEnabled()) redirect('/');
   const email = s(f, 'email').toLowerCase();

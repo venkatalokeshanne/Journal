@@ -7,13 +7,15 @@ import { addDays, weekdayOf } from '@/lib/time';
 import { dateLabel, money, pct, WEEKDAY_NAMES } from '@/lib/format';
 import { TopBar, TradeRow, Kpi } from '@/components/ui';
 import { JournalForm } from '@/components/forms';
+import { DebriefPanel } from '@/components/DebriefPanel';
+import { aiEnabled, loadNote } from '@/lib/ai/run';
 
 export const dynamic = 'force-dynamic';
 
 export default async function JournalDayPage({ params }: { params: Promise<{ day: string }> }) {
   const { day } = await params;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) notFound();
-  const [ctx, journal] = await Promise.all([getCtx(), loadJournal()]);
+  const [ctx, journal, debrief] = await Promise.all([getCtx(), loadJournal(), loadNote('debrief', day)]);
   const trips = ctx.trips.filter((t) => t.closeDate === day || (t.status === 'OPEN' && t.openDate === day));
   const closed = trips.filter((t) => t.status === 'CLOSED');
   const realized = ctx.execs
@@ -45,10 +47,12 @@ export default async function JournalDayPage({ params }: { params: Promise<{ day
           <Kpi label="Fees" value={money(-s.commissions, ctx.ccy)} />
         </div>
 
+        <DebriefPanel day={day} saved={debrief} enabled={aiEnabled()} />
+
         <div className="two">
           <section className="card">
             <div className="card-head"><h3>Notes for the day</h3></div>
-            <JournalForm key={day} j={j} />
+            <JournalForm key={`${day}:${j.review.length}`} j={j} />
           </section>
           <section className="card">
             <div className="card-head"><h3>Trades</h3><Link className="small muted" href={`/trades?day=${day}&status=all`}>Open list ›</Link></div>

@@ -5,13 +5,14 @@ import { emptyPlan, type DayReality } from '@/lib/plan';
 import { todayInTz } from '@/lib/time';
 import { TopBar } from '@/components/ui';
 import { PlanBoard } from '@/components/PlanBoard';
+import { aiEnabled, loadNote } from '@/lib/ai/run';
 
 export const dynamic = 'force-dynamic';
 
 export default async function PlanDay({ params }: { params: Promise<{ day: string }> }) {
   const { day } = await params;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) notFound();
-  const [ctx, saved, defaults, plans] = await Promise.all([getCtx(), loadPlan(day), loadPlanDefaults(), loadPlans()]);
+  const [ctx, saved, defaults, plans, aiCheck] = await Promise.all([getCtx(), loadPlan(day), loadPlanDefaults(), loadPlans(), loadNote('plan', day)]);
   const previous = plans.find((p) => p.day < day && p.tickers.length > 0) ?? null;
 
   // What actually happened that day (round trips opened that day)
@@ -45,6 +46,8 @@ export default async function PlanDay({ params }: { params: Promise<{ day: strin
           ccy={ctx.ccy}
           tradeCcy={ctx.tradeCcy}
           today={todayInTz()}
+          aiEnabled={aiEnabled()}
+          aiCheck={aiCheck}
         />
       </main>
     </>

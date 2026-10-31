@@ -9,6 +9,7 @@ export type SP = Record<string, string | string[] | undefined>;
 export const one = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? '';
 
 export const RANGES = [
+  { id: 'today', label: 'Today' },
   { id: '7d', label: '7D' },
   { id: '30d', label: '30D' },
   { id: '90d', label: '90D' },
@@ -17,14 +18,18 @@ export const RANGES = [
   { id: 'all', label: 'All' },
 ] as const;
 
-export function resolveRange(sp: SP): { from: string | null; to: string | null; id: string } {
+export const RANGE_COOKIE = 'tj_range';
+
+/** URL ?range wins; otherwise the range you last picked (remembered in a cookie across tabs). */
+export function resolveRange(sp: SP, remembered?: string): { from: string | null; to: string | null; id: string } {
   const from = one(sp.from), to = one(sp.to);
   if (/^\d{4}-\d{2}-\d{2}$/.test(from) || /^\d{4}-\d{2}-\d{2}$/.test(to)) {
     return { from: from || null, to: to || null, id: 'custom' };
   }
-  const id = one(sp.range) || 'all';
+  const id = one(sp.range) || remembered || 'all';
   const today = todayInTz();
   switch (id) {
+    case 'today': return { from: today, to: today, id };
     case '7d': return { from: addDays(today, -6), to: null, id };
     case '30d': return { from: addDays(today, -29), to: null, id };
     case '90d': return { from: addDays(today, -89), to: null, id };
@@ -60,7 +65,7 @@ export async function getCtx(sp: SP = {}): Promise<Ctx> {
   const tradeCcy = currencies.length === 1 ? currencies[0] : 'USD';
   const mode = jar.get('tj_ccy')?.value;
   const base = mode === 'base' || (mode !== 'trade' && currencies.length > 1);
-  const range = resolveRange(sp);
+  const range = resolveRange(sp, jar.get(RANGE_COOKIE)?.value);
   const inRange = (d: string | null) => !!d && (!range.from || d >= range.from) && (!range.to || d <= range.to);
   return {
     execs,

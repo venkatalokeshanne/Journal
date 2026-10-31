@@ -98,6 +98,25 @@ create table if not exists settings (
   updated_at timestamptz not null default now()
 );
 
+create table if not exists ai_notes (
+  kind text not null,
+  ref text not null,
+  content text not null,
+  model text not null,
+  created_at timestamptz not null default now(),
+  primary key (kind, ref)
+);
+
+create table if not exists ai_usage (
+  id bigserial primary key,
+  at timestamptz not null default now(),
+  kind text not null,
+  model text not null,
+  input_tokens integer not null default 0,
+  output_tokens integer not null default 0,
+  cost_usd numeric not null default 0
+);
+
 -- Block Supabase's public REST API from these tables (the app connects as the database owner).
 alter table executions enable row level security;
 alter table setups enable row level security;
@@ -106,6 +125,8 @@ alter table journal_days enable row level security;
 alter table sync_log enable row level security;
 alter table day_plans enable row level security;
 alter table settings enable row level security;
+alter table ai_notes enable row level security;
+alter table ai_usage enable row level security;
 `;
 
 /**
