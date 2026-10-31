@@ -86,12 +86,26 @@ create table if not exists sync_log (
   updated integer not null default 0
 );
 
+create table if not exists day_plans (
+  day date primary key,
+  data jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists settings (
+  key text primary key,
+  value jsonb not null,
+  updated_at timestamptz not null default now()
+);
+
 -- Block Supabase's public REST API from these tables (the app connects as the database owner).
 alter table executions enable row level security;
 alter table setups enable row level security;
 alter table trade_notes enable row level security;
 alter table journal_days enable row level security;
 alter table sync_log enable row level security;
+alter table day_plans enable row level security;
+alter table settings enable row level security;
 `;
 
 /**

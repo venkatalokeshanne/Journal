@@ -7,6 +7,7 @@ const isActive = (path: string, href: string) => (href === '/' ? path === '/' : 
 
 export function SideNav() {
   const path = usePathname();
+  if (path.startsWith('/login')) return null;
   return (
     <nav className="sidenav">
       <div className="brand"><span className="brand-dot" />Trade Journal</div>
@@ -22,6 +23,7 @@ export function SideNav() {
 
 export function BottomNav() {
   const path = usePathname();
+  if (path.startsWith('/login')) return null;
   const moreActive = path.startsWith('/more') || EXTRA.some((l) => isActive(path, l.href));
   return (
     <nav className="bottomnav">

@@ -110,11 +110,27 @@ export function SetupForm({ setup, children }: { setup?: Setup; children?: React
 
 export function LoginForm() {
   const [state, action, pending] = useActionState<Res, FormData>(login, null);
+  const [show, setShow] = useState(false);
   return (
-    <form action={action} className="stack">
-      <div className="field"><label>Email</label><input type="email" name="email" autoComplete="email" inputMode="email" autoFocus required /></div>
-      <div className="field"><label>Password</label><input type="password" name="password" autoComplete="current-password" required /></div>
-      <button className="btn primary" disabled={pending}>{pending ? 'Signing in…' : 'Sign in'}</button>
+    <form action={action} className="stack" style={{ gap: 14 }}>
+      <div className="field">
+        <label htmlFor="email">Email</label>
+        <div className="input-icon">
+          <svg viewBox="0 0 24 24" aria-hidden><path d="M4 6h16v12H4zM4 7l8 6 8-6" /></svg>
+          <input id="email" type="email" name="email" autoComplete="email" inputMode="email" placeholder="you@example.com" autoFocus required />
+        </div>
+      </div>
+      <div className="field">
+        <label htmlFor="password">Password</label>
+        <div className="input-icon">
+          <svg viewBox="0 0 24 24" aria-hidden><path d="M6 11h12v9H6zM8.5 11V8a3.5 3.5 0 0 1 7 0v3" /></svg>
+          <input id="password" type={show ? 'text' : 'password'} name="password" autoComplete="current-password" placeholder="••••••••" required />
+          <button type="button" className="eye" onClick={() => setShow(!show)} aria-label={show ? 'Hide password' : 'Show password'}>{show ? 'Hide' : 'Show'}</button>
+        </div>
+      </div>
+      <button className="btn primary" style={{ minHeight: 50, fontSize: 15.5 }} disabled={pending}>
+        {pending ? 'Signing in…' : <>Sign in <span aria-hidden>→</span></>}
+      </button>
       <Status state={state} />
     </form>
   );

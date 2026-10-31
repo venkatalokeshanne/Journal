@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getCtx, summary, type SP } from '@/lib/view';
+import { loadPlans } from '@/lib/data';
 import { groupBy, holdBucket, marketParts, maxDrawdown, computeStats, type Bucket } from '@/lib/engine';
 import { traderScore } from '@/lib/score';
 import { money, pct, monthLabel, WEEKDAY_NAMES, pnlClass } from '@/lib/format';
@@ -28,6 +29,12 @@ export default async function Reports({ searchParams }: { searchParams: Promise<
   const ctx = await getCtx(sp);
   if (!ctx.execs.length) return (<><TopBar title="Reports" /><main className="main"><NoData /></main></>);
   const { closed, stats: s, days } = summary(ctx);
+  const plans = new Map((await loadPlans()).map((p) => [p.day, new Set(p.tickers.map((t) => t.symbol))]));
+  const byPlan = groupBy(closed, ctx.pnl, (t) => {
+    const set = plans.get(t.openDate);
+    if (!set) return { label: 'No plan that day', sort: 2 };
+    return set.has(t.symbol) || (t.underlying != null && set.has(t.underlying)) ? { label: 'Planned', sort: 0 } : { label: 'Unplanned', sort: 1 };
+  });
   const dd = maxDrawdown(days);
   const score = traderScore(s, days, dd);
   const P = ctx.pnl;
@@ -130,6 +137,16 @@ export default async function Reports({ searchParams }: { searchParams: Promise<
             </table>
           </div>
         </section>
+
+        {plans.size > 0 && (
+          <div className="two even">
+            <BucketCard title="Planned vs unplanned" rows={byPlan} ccy={ctx.ccy} />
+            <section className="card">
+              <div className="card-head"><h3>Why this matters</h3></div>
+              <p className="small muted" style={{ margin: 0 }}>Trades on tickers from that day’s plan vs trades you took without planning them. If unplanned trades lose money, the fix is simple: only trade your plan.</p>
+            </section>
+          </div>
+        )}
 
         <div className="two even">
           <BucketCard title="Time of day (entry, ET)" rows={byHour} ccy={ctx.ccy} />

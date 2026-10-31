@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { requireUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { fetchFlexStatement, parseFlex } from '@/lib/flex';
 import { upsertExecutions, logSync } from '@/lib/data';
@@ -10,6 +11,7 @@ export const maxDuration = 300;
 const ymd = (d: string) => d.replace(/-/g, '');
 
 export async function POST(req: Request) {
+  try { await requireUser(); } catch { return NextResponse.json({ error: 'Not signed in' }, { status: 401 }); }
   const token = process.env.IBKR_FLEX_TOKEN?.trim();
   const queryId = process.env.IBKR_FLEX_QUERY_ID?.trim();
   if (!token || !queryId) {

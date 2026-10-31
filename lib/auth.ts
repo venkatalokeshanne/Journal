@@ -27,3 +27,10 @@ export async function supabaseServer() {
     },
   });
 }
+
+/** Throws unless the request comes from an allowed, signed-in user (no-op when auth isn't configured). */
+export async function requireUser() {
+  if (!authEnabled()) return;
+  const { data } = await (await supabaseServer()).auth.getUser();
+  if (!isAllowed(data.user?.email)) throw new Error('Not signed in');
+}

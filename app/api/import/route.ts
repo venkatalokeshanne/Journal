@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { requireUser } from '@/lib/auth';
 import { revalidatePath } from 'next/cache';
 import { parseFlex } from '@/lib/flex';
 import { upsertExecutions, logSync } from '@/lib/data';
@@ -7,6 +8,7 @@ export const dynamic = 'force-dynamic';
 const MAX_BYTES = 20 * 1024 * 1024;
 
 export async function POST(req: Request) {
+  try { await requireUser(); } catch { return NextResponse.json({ error: 'Not signed in' }, { status: 401 }); }
   const form = await req.formData().catch(() => null);
   const files = (form?.getAll('files') ?? []).filter((f): f is File => f instanceof File && f.size > 0);
   if (!files.length) return NextResponse.json({ ok: false, msg: 'Choose at least one file' }, { status: 400 });

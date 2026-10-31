@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { getCtx, one, type SP } from '@/lib/view';
+import { loadPlans } from '@/lib/data';
 import { dailyPnl } from '@/lib/engine';
 import { money, monthLabel, pnlClass, pct } from '@/lib/format';
 import { todayInTz, addDays, weekdayOf } from '@/lib/time';
@@ -18,7 +19,8 @@ const shiftMonth = (ym: string, n: number) => {
 
 export default async function CalendarPage({ searchParams }: { searchParams: Promise<SP> }) {
   const sp = await searchParams;
-  const ctx = await getCtx();
+  const [ctx, allPlans] = await Promise.all([getCtx(), loadPlans()]);
+  const plannedDays = new Set(allPlans.filter((p) => p.tickers.length || p.checklist.some((c) => c.done)).map((p) => p.day));
   if (!ctx.execs.length) return (<><TopBar title="Calendar" /><main className="main"><NoData /></main></>);
 
   const closed = ctx.trips.filter((t) => t.status === 'CLOSED');
@@ -82,7 +84,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
               const cls = v ? (v.pnl > 0.004 ? 'win' : v.pnl < -0.004 ? 'loss' : '') : '';
               const inner = (
                 <>
-                  <span className="d">{+d.slice(8)}</span>
+                  <span className="d">{+d.slice(8)}{plannedDays.has(d) && <span className="plan-dot" title="Plan made" />}</span>
                   {v && (Math.abs(v.pnl) > 0.004 || v.trades) ? (
                     <span>
                       <span className={`v num ${pnlClass(v.pnl)}`} style={{ display: 'block' }}>

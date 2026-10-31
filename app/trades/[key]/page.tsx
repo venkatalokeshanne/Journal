@@ -1,6 +1,8 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { getCtx } from '@/lib/view';
+import { loadPlan } from '@/lib/data';
+import { LEVEL_KINDS } from '@/lib/plan';
 import { money, price, qty, duration, dateLabel, marketTime, pnlClass } from '@/lib/format';
 import { TopBar, Kpi, Money, Avatar } from '@/components/ui';
 import { TradeChart } from '@/components/TradeChart';
@@ -16,6 +18,11 @@ export default async function TradePage({ params }: { params: Promise<{ key: str
   if (idx < 0) notFound();
   const t = ctx.trips[idx];
   const note = ctx.notes.get(t.key);
+  const dayPlan = await loadPlan(t.openDate);
+  const planTicker = dayPlan?.tickers.find((x) => x.symbol === t.symbol || x.symbol === t.underlying) ?? null;
+  const planLevels = (planTicker?.levels ?? [])
+    .filter((l) => l.price != null)
+    .map((l) => { const k = LEVEL_KINDS.find((x) => x.kind === l.kind)!; return { price: l.price!, label: l.label || k.label.toLowerCase(), color: k.color }; });
   const p = ctx.pnl(t);
   const fx = t.realized !== 0 ? t.realizedBase / t.realized : t.legs[0]?.fx ?? 1;
   const conv = (v: number) => (ctx.base ? v * fx : v);
@@ -56,6 +63,9 @@ export default async function TradePage({ params }: { params: Promise<{ key: str
                 <span className={`badge ${t.direction === 'LONG' ? 'long' : 'short'}`}>{t.direction}</span>
                 {t.status === 'OPEN' && <span className="badge accent">OPEN</span>}
                 {t.assetClass !== 'STK' && <span className="badge">{t.assetClass}</span>}
+                {dayPlan && (planTicker
+                  ? <Link href={`/plan/${t.openDate}`} className="badge long">IN PLAN</Link>
+                  : <Link href={`/plan/${t.openDate}`} className="badge warn">NOT IN PLAN</Link>)}
               </div>
               <div className="small muted" style={{ marginTop: 4 }}>
                 {t.description} · {dateLabel(t.openDate)} {marketTime(t.openTime)} → {t.closeTime ? `${dateLabel(t.closeDate)} ${marketTime(t.closeTime)}` : 'still open'} ET
@@ -89,7 +99,7 @@ export default async function TradePage({ params }: { params: Promise<{ key: str
             {chartable ? (
               <TradeChart symbol={t.underlying && t.assetClass !== 'STK' ? t.underlying : t.symbol} from={t.openTime} to={t.closeTime ?? new Date().toISOString()}
                 legs={t.legs.map((l) => ({ time: l.time, quantity: l.quantity, price: l.price, role: l.role }))}
-                stop={note?.stopPrice} target={note?.targetPrice} />
+                stop={note?.stopPrice} target={note?.targetPrice} levels={planLevels} />
             ) : <p className="small muted">Charts are available for stocks.</p>}
           </section>
 

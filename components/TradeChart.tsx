@@ -12,9 +12,9 @@ function toEt(sec: number): number {
   return Date.UTC(y, m - 1, d, p.hour, p.minute, p.second) / 1000;
 }
 
-export function TradeChart({ symbol, from, to, legs, stop, target }: { symbol: string; from: string; to: string; legs: Leg[]; stop?: number | null; target?: number | null }) {
+export function TradeChart({ symbol, from, to, legs, stop, target, levels = [] }: { symbol: string; from: string; to: string; legs: Leg[]; stop?: number | null; target?: number | null; levels?: { price: number; label: string; color: string }[] }) {
   const box = useRef<HTMLDivElement>(null);
-  const legsKey = JSON.stringify(legs);
+  const legsKey = JSON.stringify(legs) + JSON.stringify(levels);
   const [state, setState] = useState<{ status: 'loading' | 'ok' | 'error'; msg?: string; interval?: string }>({ status: 'loading' });
 
   useEffect(() => {
@@ -67,6 +67,10 @@ export function TradeChart({ symbol, from, to, legs, stop, target }: { symbol: s
         if (entry) series.createPriceLine({ price: entry, color: v('--accent'), lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: 'entry' });
         if (stop) series.createPriceLine({ price: stop, color: v('--neg'), lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: 'stop' });
         if (target) series.createPriceLine({ price: target, color: v('--pos'), lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: 'target' });
+        for (const l of levels) {
+          const color = l.color.startsWith('var(') ? v(l.color.slice(4, -1)) : l.color;
+          series.createPriceLine({ price: l.price, color, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: `plan ${l.label}` });
+        }
 
         // zoom around the trade
         const first = snap(from), last = snap(to);

@@ -2,7 +2,8 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import * as data from '@/lib/data';
-import { supabaseServer, isAllowed, authEnabled } from '@/lib/auth';
+import { supabaseServer, isAllowed, authEnabled, requireUser } from '@/lib/auth';
+import { sanitizePlan, sanitizeDefaults } from '@/lib/plan';
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? '').trim();
 const numOrNull = (v: string) => {
@@ -17,6 +18,7 @@ const intIn = (v: string, lo: number, hi: number) => {
 const list = (v: string) => [...new Set(v.split(/[,\n]/).map((x) => x.trim()).filter(Boolean))];
 
 export async function saveTradeNote(_: unknown, f: FormData) {
+  await requireUser();
   const key = s(f, 'key');
   if (!key) return { ok: false, msg: 'Missing trade' };
   await data.saveNote({
@@ -35,6 +37,7 @@ export async function saveTradeNote(_: unknown, f: FormData) {
 }
 
 export async function saveJournal(_: unknown, f: FormData) {
+  await requireUser();
   const day = s(f, 'day');
   if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) return { ok: false, msg: 'Bad date' };
   await data.saveJournalDay({
@@ -50,6 +53,7 @@ export async function saveJournal(_: unknown, f: FormData) {
 }
 
 export async function saveSetupAction(_: unknown, f: FormData) {
+  await requireUser();
   const name = s(f, 'name');
   if (!name) return { ok: false, msg: 'Give the setup a name' };
   try {
@@ -68,9 +72,30 @@ export async function saveSetupAction(_: unknown, f: FormData) {
 }
 
 export async function deleteSetupAction(f: FormData) {
+  await requireUser();
   const id = intIn(s(f, 'id'), 1, Number.MAX_SAFE_INTEGER);
   if (id) await data.deleteSetup(id);
   revalidatePath('/playbook');
+}
+
+export async function savePlanAction(raw: unknown) {
+  await requireUser();
+  const plan = sanitizePlan(raw);
+  if (!plan) return { ok: false, msg: 'Invalid plan' };
+  try {
+    await data.savePlan(plan);
+  } catch {
+    return { ok: false, msg: 'Could not save' };
+  }
+  revalidatePath('/calendar');
+  revalidatePath('/reports');
+  return { ok: true, msg: 'Saved' };
+}
+
+export async function savePlanDefaultsAction(raw: unknown) {
+  await requireUser();
+  await data.savePlanDefaults(sanitizeDefaults(raw));
+  return { ok: true, msg: 'Saved as your default' };
 }
 
 export async function login(_: unknown, f: FormData) {

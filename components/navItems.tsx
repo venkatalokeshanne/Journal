@@ -13,17 +13,19 @@ export const ICONS: Record<string, ReactNode> = {
   journal: <I d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3zM5 17a3 3 0 0 1 3-3h11M9 8h6" />,
   reports: <I d="M4 20V10M10 20V4M16 20v-7M22 20H2" />,
   playbook: <I d="M12 3 3 8l9 5 9-5zM3 13l9 5 9-5" />,
+  plan: <I d="M9 4h6a1 1 0 0 1 1 1v1H8V5a1 1 0 0 1 1-1zM8 6H6a1 1 0 0 0-1 1v13a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1h-2M9 12l2 2 4-4M9 17h6" />,
   import: <I d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3" />,
   more: <I d="M5 12h.01M12 12h.01M19 12h.01" />,
 };
 
 export const MAIN = [
   { href: '/', label: 'Home', icon: 'home' },
+  { href: '/plan', label: 'Plan', icon: 'plan' },
   { href: '/trades', label: 'Trades', icon: 'trades' },
   { href: '/calendar', label: 'Calendar', icon: 'calendar' },
-  { href: '/journal', label: 'Journal', icon: 'journal' },
 ];
 export const EXTRA = [
+  { href: '/journal', label: 'Journal', icon: 'journal' },
   { href: '/reports', label: 'Reports', icon: 'reports' },
   { href: '/playbook', label: 'Playbook', icon: 'playbook' },
   { href: '/import', label: 'Sync & Import', icon: 'import' },

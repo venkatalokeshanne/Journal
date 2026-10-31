@@ -1,5 +1,6 @@
 import { q } from './db';
 import type { Exec, JournalDay, Setup, TradeNote } from './types';
+import { DEFAULTS, sanitizeDefaults, sanitizePlan, type DayPlan, type PlanDefaults } from './plan';
 
 const iso = (v: unknown) => (v instanceof Date ? v.toISOString() : new Date(String(v)).toISOString());
 const n = (v: unknown) => (v === null || v === undefined ? null : Number(v));
@@ -144,5 +145,38 @@ export async function saveJournalDay(j: JournalDay) {
     `insert into journal_days (day, plan, review, lessons, mood, discipline, updated_at) values ($1,$2,$3,$4,$5,$6, now())
      on conflict (day) do update set plan=$2, review=$3, lessons=$4, mood=$5, discipline=$6, updated_at=now()`,
     [j.day, j.plan, j.review, j.lessons, j.mood, j.discipline],
+  );
+}
+
+// ---------- daily plans ----------
+export async function loadPlan(day: string): Promise<DayPlan | null> {
+  const [r] = await q(`select data from day_plans where day = $1`, [day]);
+  return r ? sanitizePlan({ ...r.data, day }) : null;
+}
+
+/** All plans, newest first (small: one row per trading day). */
+export async function loadPlans(): Promise<DayPlan[]> {
+  const rows = await q(`select day, data from day_plans order by day desc`);
+  return rows.map((r) => sanitizePlan({ ...r.data, day: d(r.day) })).filter((p): p is DayPlan => !!p);
+}
+
+export async function savePlan(p: DayPlan) {
+  await q(
+    `insert into day_plans (day, data, updated_at) values ($1, $2, now())
+     on conflict (day) do update set data = excluded.data, updated_at = now()`,
+    [p.day, JSON.stringify(p)],
+  );
+}
+
+export async function loadPlanDefaults(): Promise<PlanDefaults> {
+  const [r] = await q(`select value from settings where key = 'plan_defaults'`);
+  return r ? sanitizeDefaults(r.value) : DEFAULTS;
+}
+
+export async function savePlanDefaults(v: PlanDefaults) {
+  await q(
+    `insert into settings (key, value, updated_at) values ('plan_defaults', $1, now())
+     on conflict (key) do update set value = excluded.value, updated_at = now()`,
+    [JSON.stringify(v)],
   );
 }

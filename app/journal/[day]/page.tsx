@@ -30,7 +30,10 @@ export default async function JournalDayPage({ params }: { params: Promise<{ day
           <Link className="btn sm" href={`/journal/${addDays(day, -1)}`} aria-label="Previous day">‹</Link>
           <div style={{ textAlign: 'center' }}>
             <h1 style={{ fontSize: 19 }}>{WEEKDAY_NAMES[weekdayOf(day)]}, {dateLabel(day)}</h1>
-            <Link href="/journal" className="small muted">All days</Link>
+            <div className="row" style={{ justifyContent: 'center', gap: 12 }}>
+              <Link href="/journal" className="small muted">All days</Link>
+              <Link href={`/plan/${day}`} className="small" style={{ color: 'var(--accent)' }}>Open plan ›</Link>
+            </div>
           </div>
           <Link className="btn sm" href={`/journal/${addDays(day, 1)}`} aria-label="Next day">›</Link>
         </div>
